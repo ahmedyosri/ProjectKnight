@@ -5,27 +5,30 @@
 #include "GameFramework/Character.h"
 #include "PlayerControl.generated.h"
 
+UENUM(BlueprintType)
+enum class Flags : uint8{
+	FacingRight UMETA(DisplayName = "FacingRight"),
+
+	LookingUp UMETA(DisplayName = "LookingUp"),
+	LookingDown UMETA(DisplayName = "LookingDown"),
+	PossibleToGoUp UMETA(DisplayName = "PossibleToGoUp"),
+	PossibleToGoDown UMETA(DisplayName = "PossibleToGoDown"),
+
+	Sliding UMETA(DisplayName = "Sliding"),
+	TargetingRightWallForSlide UMETA(DisplayName = "TargetingRightWallForSlide"),
+	TryingToSlide UMETA(DisplayName = "TryingToSlide"),
+	PossibleToWallJump UMETA(DisplayName = "PossibleToWallJump"),
+	PossibleToClimbWall UMETA(DisplayName = "PossibleToClimbWall"),
+
+	asdasd UMETA(DisplayName = "asdsad")
+};
+
 UCLASS()
 class KNIGHT3_API APlayerControl : public ACharacter
 {
 	GENERATED_BODY()
 
-	enum Flags{
-		FacingRight,
-		
-		LookingUp,
-		LookingDown,
-		PossibleToGoUp,
-		PossibleToGoDown,
-
-		Sliding,
-		TargetingRightWallForSlide,
-		TryingToSlide,
-		PossibleToWallJump,
-		PossibleToClimbWall,
-	};
-
-
+	
 	static const int32 MAX_FLAGS = 25;
 	const FName	
 		AXRight = "MoveRight",
@@ -86,7 +89,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		float slidingSpeed;
 
-	bool inline IsIt(Flags flag) const;
+	UFUNCTION(BlueprintCallable, Category = "Platform Movement")
+	bool IsIt(Flags flag) const;
 
 
 protected:
