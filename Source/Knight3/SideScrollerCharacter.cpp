@@ -25,8 +25,8 @@ void ASideScrollerCharacter::UpdateFlags(){
 	tmpVector = GetActorLocation();
 
 	for (int32 i = 0; i < MAX_FLAGS; i++){
-		if (isIt[i])
-			PrintText(FString::FromInt(i));
+		//if (isIt[i])
+		//	PrintText(FString::FromInt(i));
 		switch ((Flags)i)
 		{
 
@@ -70,7 +70,7 @@ void ASideScrollerCharacter::UpdateFlags(){
 		}
 	}
 
-	PrintText("========");
+	//PrintText("========");
 }
 
 // Called when the game starts or when spawned
@@ -155,15 +155,18 @@ void ASideScrollerCharacter::JumpPressed(){
 	}
 
 	if (CanJumpInternal_Implementation()){
+		PrintText("Normal Jump");
 		Jump();
 		currSlidingTimer = 0;
 	}
 	else if (IsIt(Flags::Moving) && IsIt(Flags::PossibleToWallJump)){
+		PrintText("Climb");
 		currSlidingTimer = 0;
 		ClimbWall();
 	}
 	else if (IsIt(Flags::PossibleToWallJump))
 	{
+		PrintText("WallJump");
 		currSlidingTimer = 0;
 		WallJump();
 	}
@@ -175,7 +178,7 @@ void ASideScrollerCharacter::OnComponentHit(class AActor* OtherActor, class UPri
 	isIt[(int32)Flags::Sliding] = false;
 
 	
-	if (IsIt(Flags::Moving) && (Hit.Normal.X * GetCharacterMovement()->GetCurrentAcceleration().X) < 0 && GetCharacterMovement()->Velocity.Z < 0){
+	if (IsIt(Flags::Moving) && IsIt(Flags::FacingAWall) && GetCharacterMovement()->Velocity.Z < 0){
 		isIt[(int32)Flags::Sliding] = true;
 
 
@@ -189,7 +192,7 @@ void ASideScrollerCharacter::PrintText(FString txt) const {
 
 bool ASideScrollerCharacter::CanJumpInternal_Implementation() const {
 
-	return Super::CanJumpInternal_Implementation() || IsIt(Flags::Sliding);
+	return Super::CanJumpInternal_Implementation();
 }
 
 void ASideScrollerCharacter::WallJump(){
@@ -199,7 +202,7 @@ void ASideScrollerCharacter::WallJump(){
 }
 
 void ASideScrollerCharacter::ClimbWall(){
-	GetMovementComponent()->Velocity += FVector(0.1f, 0, 0.9f) * jumpVelocity;
+	GetMovementComponent()->Velocity = FVector(0.05f, 0, 0.95f) * jumpVelocity;
 }
 
 bool ASideScrollerCharacter::IsIt(Flags flag) const {
