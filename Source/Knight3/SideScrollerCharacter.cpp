@@ -16,6 +16,12 @@ ASideScrollerCharacter::ASideScrollerCharacter(const FObjectInitializer& ObjectI
 	FacingWallTestComp = ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, "FacingWallTestComponent");
 	FacingWallTestComp->AttachParent = GetRootComponent();
 
+	bUseControllerRotationYaw = false;
+
+	m_Velocity = &GetCharacterMovement()->Velocity;
+
+	currentLayer = targetLayer = 0;
+
 	for (int32 i = 0; i < MAX_FLAGS; i++)
 		isIt[i] = false;
 }
@@ -65,6 +71,11 @@ void ASideScrollerCharacter::UpdateFlags(){
 		case Flags::PossibleToWallJump:
 			break;
 
+		case Flags::StoppedJumping:
+			if (isIt[i] && m_Velocity->Z <= 0)
+				isIt[i] = false;
+			break;
+
 		default:
 			break;
 		}
@@ -77,7 +88,6 @@ void ASideScrollerCharacter::UpdateFlags(){
 void ASideScrollerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	GetWorld()->GetFirstPlayerController()->Possess((APawn*)this);
 }
 
 // Called every frame
@@ -88,17 +98,14 @@ void ASideScrollerCharacter::Tick( float DeltaTime )
 	// ================= Update Flags before anything
 	UpdateFlags();
 
-	// ================= Update Rotation
-
-	FRotator actorRot = GetActorRotation();
-	FRotator res = FMath::RInterpTo(actorRot, FRotator(0, IsIt(Flags::FacingRight) ? 0 : 180, 0), DeltaTime, 20);
-	SetActorRotation(res);
 
 	// ================= Update Depth
 	
 	currDepthValue = FMath::FInterpTo(currDepthValue, targetLayer*layerDepth*-1, DeltaTime, 4);
-	if (FMath::Abs(currDepthValue - targetLayer*layerDepth*-1) < 20)
+	if (FMath::Abs(currDepthValue - targetLayer*layerDepth*-1) < 20){
 		currDepthValue = targetLayer * layerDepth * -1;
+		currentLayer = targetLayer;
+	}
 	tmpVector = GetActorLocation();
 	tmpVector.Y = currDepthValue;
 	SetActorLocation(tmpVector);
@@ -107,11 +114,17 @@ void ASideScrollerCharacter::Tick( float DeltaTime )
 	// ================= Rest
 	GetCharacterMovement()->JumpZVelocity = jumpVelocity;
 	currSlidingTimer -= (currSlidingTimer > 0) * DeltaTime;
-	if (GetCharacterMovement()->Velocity.Z < 0 && (IsIt(Flags::Sliding))){
+	
+	if (GetCharacterMovement()->Velocity.Z < 0 && (IsIt(Flags::Sliding)) && GetCharacterMovement()->Velocity.Z < -slidingSpeed){
 
-		if (GetCharacterMovement()->Velocity.Z < -slidingSpeed)
-			GetCharacterMovement()->Velocity.Z = -slidingSpeed;
+		GetCharacterMovement()->Velocity.Z = -slidingSpeed;
 
+	}
+
+	if (m_Velocity->Z > 0 && IsIt(Flags::StoppedJumping) && targetLayer == currentLayer){
+		m_Velocity->Z = FMath::FInterpTo(m_Velocity->Z, 0, DeltaTime, 3);
+		if (m_Velocity->Z < 0.1f)
+			m_Velocity->Z = 0;
 	}
 
 }
@@ -125,6 +138,7 @@ void ASideScrollerCharacter::SetupPlayerInputComponent(class UInputComponent* In
 	InputComponent->BindAxis(AXUp,	 this, &ASideScrollerCharacter::LookUp);
 	InputComponent->BindAxis(AXDown, this, &ASideScrollerCharacter::LookDown);
 	InputComponent->BindAction(ACJump, IE_Pressed, this, &ASideScrollerCharacter::JumpPressed);
+	InputComponent->BindAction(ACJump, IE_Released, this, &ASideScrollerCharacter::JumpReleased);
 
 }
 
@@ -155,22 +169,23 @@ void ASideScrollerCharacter::JumpPressed(){
 	}
 
 	if (CanJumpInternal_Implementation()){
-		PrintText("Normal Jump");
 		Jump();
 		currSlidingTimer = 0;
 	}
 	else if (IsIt(Flags::Moving) && IsIt(Flags::PossibleToWallJump)){
-		PrintText("Climb");
 		currSlidingTimer = 0;
 		ClimbWall();
 	}
 	else if (IsIt(Flags::PossibleToWallJump))
 	{
-		PrintText("WallJump");
 		currSlidingTimer = 0;
 		WallJump();
 	}
 
+}
+
+void ASideScrollerCharacter::JumpReleased(){
+	isIt[(int32)Flags::StoppedJumping] = true;
 }
 
 void ASideScrollerCharacter::OnComponentHit(class AActor* OtherActor, class UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit){

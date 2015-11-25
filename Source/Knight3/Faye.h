@@ -13,7 +13,10 @@ class KNIGHT3_API AFaye : public ASideScrollerCharacter
 {
 	GENERATED_BODY()
 	
-	
-	
+public:
+
+	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
 	
 };

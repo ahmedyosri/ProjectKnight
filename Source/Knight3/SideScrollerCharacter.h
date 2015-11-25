@@ -7,17 +7,18 @@
 
 UENUM(BlueprintType)
 enum class Flags : uint8{
-	FacingRight UMETA(DisplayName = "FacingRight"),
+	FacingRight UMETA(DisplayName = "Facing Right"),
 	Moving UMETA(DisplayName = "Moving"),
+	StoppedJumping UMETA(DisplayName = "Stopped Jumping"),
 
-	LookingUp UMETA(DisplayName = "LookingUp"),
-	LookingDown UMETA(DisplayName = "LookingDown"),
-	PossibleToGoUp UMETA(DisplayName = "PossibleToGoUp"),
-	PossibleToGoDown UMETA(DisplayName = "PossibleToGoDown"),
+	LookingUp UMETA(DisplayName = "Looking Up"),
+	LookingDown UMETA(DisplayName = "Looking Down"),
+	PossibleToGoUp UMETA(DisplayName = "Possible To Go Up"),
+	PossibleToGoDown UMETA(DisplayName = "Possible To Go Down"),
 
-	FacingAWall UMETA(DisplayName = "FacingAWall"),
+	FacingAWall UMETA(DisplayName = "Facing a Wall"),
 	Sliding UMETA(DisplayName = "Sliding"),
-	PossibleToWallJump UMETA(DisplayName = "PossibleToWallJump")
+	PossibleToWallJump UMETA(DisplayName = "Possible To WallJump")
 
 };
 
@@ -60,7 +61,9 @@ public:
 		void LookDown(float AxisValue);
 
 	UFUNCTION()
-	void JumpPressed();
+		void JumpPressed();
+	UFUNCTION()
+		void JumpReleased();
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Platform Movement")
 		UBoxComponent* FacingWallTestComp;
@@ -78,10 +81,10 @@ public:
 
 	float	currDepthValue;
 	float	currSlidingTimer;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	int32	targetLayer;
+	int32	currentLayer, targetLayer;
 
 	FVector tmpVector;
+	FVector* m_Velocity;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		float jumpVelocity;
